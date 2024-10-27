@@ -1,9 +1,9 @@
 # Compiler and flags
-CC = gcc
+CC = g++
 CFLAGS = -Wall -Wextra -O2
 
 # Source files and output
-SRC = main.c
+SRC = main.cpp
 OBJ = main
 LIBS = -lglfw -lGL -lGLEW
 

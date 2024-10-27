@@ -1,18 +1,22 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
-#include <stdio.h>
-#include <stdbool.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <cmath>
+#include <iostream>
 
 void processInput(GLFWwindow *window);
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 
-// settings
+// Settings
 const int WIDTH = 800, HEIGHT = 600;
 const char *vertexShaderSource = "#version 330 core\n"
     "layout (location = 0) in vec3 aPos;\n"
+    "uniform mat4 transform;\n"
     "void main()\n"
     "{\n"
-    "   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
+    "   gl_Position = transform * vec4(aPos, 1.0f);\n"
     "}\0";
 const char *fragmentShaderSource = "#version 330 core\n"
     "out vec4 FragColor;\n"
@@ -90,12 +94,17 @@ int main() {
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
 
-    // Define the vertices for a triangle
-    float vertices[] = {
-        -0.5f, -0.5f, 0.0f,  // left
-         0.5f, -0.5f, 0.0f,  // right
-         0.0f,  0.5f, 0.0f   // top
-    };
+    // Define the vertices and indices for shape
+	float vertices[] = {
+		0.5f, 0.5f, 0.0f,   // top right
+		0.5f, -0.5f, 0.0f,  // bottom right
+		-0.5f, -0.5f, 0.0f, // bottom left
+		-0.5f, 0.5f, 0.0f   // top left 
+	};
+	unsigned int indices[] = {
+		0, 1, 3,   // first triangle
+		1, 2, 3    // second triangle
+	};  
 
     // Create and bind VAO and VBO
     unsigned int VBO, VAO;
@@ -106,32 +115,51 @@ int main() {
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
+	// Create a element buffer object (EBO)
+	unsigned int EBO;
+	glGenBuffers(1, &EBO);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+	// Set the vertex attribute points
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
-
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
-    // Main render loop
-    while (!glfwWindowShouldClose(window)) {
-        // Process input
-        processInput(window);
+	// Wireframe rendering
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-        // Clear the screen
-        // glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-        // glClear(GL_COLOR_BUFFER_BIT);
+	// Main render loop
+	while (!glfwWindowShouldClose(window)) {
+		// Process input
+		processInput(window);
 
-        // Draw the triangle
-        glUseProgram(shaderProgram);
-        glBindVertexArray(VAO);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+		// Clear the screen
+		glClearColor(0.0f, 0.0f, 0.0f, 1.0f); // Clear screen to black
+		glClear(GL_COLOR_BUFFER_BIT);
 
-        // Swap buffers and poll events
-        glfwSwapBuffers(window);
-        glfwPollEvents();
-    }
+		// Update transformation matrix
+		glm::mat4 trans = glm::mat4(1.0f);
+		trans = glm::scale(trans, glm::vec3(0.5f, 0.5f, 0.5f));
+		trans = glm::translate(trans, glm::vec3(std::sin((float)glfwGetTime()), 0.0f, 0.0f));
+		trans = glm::rotate(trans, (float)glfwGetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
 
-    // Clean up
+		// Use shader program and set the uniform
+		glUseProgram(shaderProgram);
+		unsigned int transformLoc = glGetUniformLocation(shaderProgram, "transform");
+		glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(trans));
+
+		// Draw the rectangle
+		glBindVertexArray(VAO);
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+		// Swap buffers and poll events
+		glfwSwapBuffers(window);
+		glfwPollEvents();
+	}
+
+	// Clean up
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &VBO);
     glDeleteProgram(shaderProgram);
