@@ -8,6 +8,10 @@
 #include "Cube.h"
 #include <iostream>
 #include <cmath>
+#include <vector>
+#include <memory>
+
+using namespace std;
 
 using Vec2 = glm::vec2;
 using Vec3 = glm::vec3;
@@ -115,21 +119,26 @@ int main() {
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
 
-    // Add positions for multiple cubes
-    Vec3 cubePositions[] = {
-        Vec3( 0.0f,  0.0f,  0.0f), 
-        Vec3( 2.0f,  5.0f, -15.0f), 
-        Vec3(-1.5f, -2.2f, -2.5f),  
-        Vec3(-3.8f, -2.0f, -12.3f),  
-        Vec3( 2.4f, -0.4f, -3.5f),  
-        Vec3(-1.7f,  3.0f, -7.5f),  
-        Vec3( 1.3f, -2.0f, -2.5f),  
-        Vec3( 1.5f,  2.0f, -2.5f), 
-        Vec3( 1.5f,  0.2f, -1.5f), 
-        Vec3(-1.3f,  1.0f, -1.5f)  
-    };
-	
-	Cube cube(Vec3(0.0f, 0.0f, 0.0f), Vec3(0.0f, 0.0f, 0.0f), Vec3(1.0f, 1.0f, 1.0f));
+
+	// Add positions for multiple cubes
+	Vec3 cubePositions[] = {
+		Vec3( 0.0f,  0.0f,  0.0f), 
+		Vec3( 2.0f,  5.0f, -15.0f), 
+		Vec3(-1.5f, -2.2f, -2.5f),  
+		Vec3(-3.8f, -2.0f, -12.3f),  
+		Vec3( 2.4f, -0.4f, -3.5f),  
+		Vec3(-1.7f,  3.0f, -7.5f),  
+		Vec3( 1.3f, -2.0f, -2.5f),  
+		Vec3( 1.5f,  2.0f, -2.5f), 
+		Vec3( 1.5f,  0.2f, -1.5f), 
+		Vec3(-1.3f,  1.0f, -1.5f)  
+	};
+
+	vector<std::unique_ptr<Cube>> cubes;
+	for (int i = 0; i < 10; i++) {
+		cubes.push_back(std::make_unique<Cube>(cubePositions[i], Vec3(0.0f, 0.0f, 0.0f), Vec3(1.0f, 1.0f, 1.0f)));
+	}
+
 
     // Experimental
     glEnable(GL_DEPTH_TEST);
@@ -160,12 +169,22 @@ int main() {
         glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
         glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
 
-		// Cube
-		Mat4 model = cube.getModelMatrix();
+		// Render cubes
 		int modelLoc = glGetUniformLocation(shaderProgram, "model");
-		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-		cube.rotation += Vec3(1.0f, 1.0f, 1.0f) * 50.0f * deltaTime;
-		cube.draw();
+		for (const auto& cube : cubes) {
+			// Update rotation
+			cube->rotation += Vec3(1.0f, 1.0f, 1.0f) * 50.0f * deltaTime;
+
+			// Get the model matrix
+			Mat4 model = cube->getModelMatrix();
+
+			// Set the model matrix uniform
+			int modelLoc = glGetUniformLocation(shaderProgram, "model");
+			glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+
+			// Draw the cube
+			cube->draw();
+		}
 
         // Swap buffers and poll events
         glfwSwapBuffers(window);

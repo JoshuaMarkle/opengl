@@ -17,12 +17,16 @@ public:
     Vec3 rotation;
     Camera* camera;
 
-	float yVelocity;
+	Vec3 velocity;
 	bool grounded;
-	const float gravity = -30.0f;
-	const float jumpSpeed = 10.0f;
 
-	float moveSpeed = 6.0f;
+	const float maxSpeed = 1000.0f;
+	const float moveSpeed = 2.0f;
+	const float jumpSpeed = 10.0f;
+	const float gravity = -25.0f;
+
+	const float dragForce = 12.0f;
+	const float frictionForce = 15.0f;
 
     // Constructor
     Player(Vec3 position = Vec3(0.0f, 0.0f, 0.0f), 
@@ -32,19 +36,27 @@ public:
         this->rotation = Vec3(0.0f, 0.0f, 0.0f);
         this->camera = camera;
 
-		this->yVelocity = 0.0f;
+		this->velocity = Vec3(0.0f, 0.0f, 0.0f);
 		this->grounded = true;
     }
 
-	// Update the player position
+	// Player movement
 	void move(const Vec2& direction, float deltaTime) {
 		if (camera) {
 			// Calculate the forward and right vectors
 			Vec3 forward = glm::normalize(Vec3(camera->front.x, 0.0f, camera->front.z));
 			Vec3 right = glm::normalize(glm::cross(forward, camera->worldUp));
 
-			// Move in the direction specified by the input
-			position += (forward * direction.y + right * direction.x) * moveSpeed * deltaTime;
+			// Calculate target velocity
+			velocity += (forward * direction.y + right * direction.x) * moveSpeed;
+
+			// Apply friction or drag to reduce velocity
+			float damping = grounded ? frictionForce : dragForce;
+			velocity.x *= 1.0f - (damping * deltaTime);
+			velocity.z *= 1.0f - (damping * deltaTime);
+
+			// Update the player's position
+			position += velocity * deltaTime;
 
 			// Update the camera's position
 			camera->position = position;
@@ -54,7 +66,7 @@ public:
 	// Make the player jump
     void jump() {
         if (grounded) {
-            yVelocity = jumpSpeed;
+            velocity.y = jumpSpeed;
             grounded = false;
         }
     }
@@ -63,15 +75,15 @@ public:
 	void updateVertical(float deltaTime) {
         if (!grounded) {
             // Apply gravity to the vertical velocity
-            yVelocity += gravity * deltaTime;
+            velocity.y += gravity * deltaTime;
 
             // Update the player's Y position
-            position.y += yVelocity * deltaTime;
+            position.y += velocity.y * deltaTime;
 
             // Check if the player has landed on the ground
             if (position.y <= 0.0f) {
                 position.y = 0.0f;
-                yVelocity = 0.0f;
+                velocity.y = 0.0f;
                 grounded = true;
             }
         }
