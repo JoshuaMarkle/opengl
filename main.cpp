@@ -4,8 +4,12 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include "Camera.h"
+#include "Cube.h"
 #include <iostream>
 #include <cmath>
+
+using Vec3 = glm::vec3;
+using Mat4 = glm::mat4;
 
 void processInput(GLFWwindow *window);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -33,7 +37,7 @@ float deltaTime = 0.0f;	// Time between current frame and last frame
 float lastFrame = 0.0f; // Time of last frame
 
 // Camera
-Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
+Camera camera(Vec3(0.0f, 0.0f, 3.0f));
 
 int main() {
     // Initialize GLFW
@@ -108,66 +112,27 @@ int main() {
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
 
-    // Define the vertices for a 3D cube
-    float vertices[] = {
-        // Positions
-        -0.5f, -0.5f, -0.5f,
-         0.5f, -0.5f, -0.5f,
-         0.5f,  0.5f, -0.5f,
-        -0.5f,  0.5f, -0.5f,
-        -0.5f, -0.5f,  0.5f,
-         0.5f, -0.5f,  0.5f,
-         0.5f,  0.5f,  0.5f,
-        -0.5f,  0.5f,  0.5f
-    };
-    unsigned int indices[] = {
-        0, 1, 2, 2, 3, 0, // back face
-        4, 5, 6, 6, 7, 4, // front face
-        0, 1, 5, 5, 4, 0, // bottom face
-        2, 3, 7, 7, 6, 2, // top face
-        0, 3, 7, 7, 4, 0, // left face
-        1, 2, 6, 6, 5, 1  // right face
-    };
-
     // Add positions for multiple cubes
-    glm::vec3 cubePositions[] = {
-        glm::vec3( 0.0f,  0.0f,  0.0f), 
-        glm::vec3( 2.0f,  5.0f, -15.0f), 
-        glm::vec3(-1.5f, -2.2f, -2.5f),  
-        glm::vec3(-3.8f, -2.0f, -12.3f),  
-        glm::vec3( 2.4f, -0.4f, -3.5f),  
-        glm::vec3(-1.7f,  3.0f, -7.5f),  
-        glm::vec3( 1.3f, -2.0f, -2.5f),  
-        glm::vec3( 1.5f,  2.0f, -2.5f), 
-        glm::vec3( 1.5f,  0.2f, -1.5f), 
-        glm::vec3(-1.3f,  1.0f, -1.5f)  
+    Vec3 cubePositions[] = {
+        Vec3( 0.0f,  0.0f,  0.0f), 
+        Vec3( 2.0f,  5.0f, -15.0f), 
+        Vec3(-1.5f, -2.2f, -2.5f),  
+        Vec3(-3.8f, -2.0f, -12.3f),  
+        Vec3( 2.4f, -0.4f, -3.5f),  
+        Vec3(-1.7f,  3.0f, -7.5f),  
+        Vec3( 1.3f, -2.0f, -2.5f),  
+        Vec3( 1.5f,  2.0f, -2.5f), 
+        Vec3( 1.5f,  0.2f, -1.5f), 
+        Vec3(-1.3f,  1.0f, -1.5f)  
     };
+	
+	Cube cube(Vec3(0.0f, 0.0f, 0.0f), Vec3(0.0f, 0.0f, 0.0f), Vec3(1.0f, 1.0f, 1.0f));
 
-    // Create and bind VAO, VBO, and EBO
-    unsigned int VBO, VAO, EBO;
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
-    glGenBuffers(1, &EBO);
-
-    glBindVertexArray(VAO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
-
-    // Enable depth testing
+    // Experimental
     glEnable(GL_DEPTH_TEST);
-
-	// Toggle wireframe
 	glPolygonMode( GL_FRONT_AND_BACK, GL_LINE);
 
-    // Main render loop
+    // Main loop
     while (!glfwWindowShouldClose(window)) {
 		// Update deltaTime
 		float currentFrame = glfwGetTime();
@@ -182,8 +147,8 @@ int main() {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // Create the view & projection matrices
-		glm::mat4 view = camera.getViewMatrix();
-        glm::mat4 projection = glm::perspective(glm::radians(camera.fov), (float)WIDTH / HEIGHT, 0.1f, 100.0f);
+		Mat4 view = camera.getViewMatrix();
+        Mat4 projection = glm::perspective(glm::radians(camera.fov), (float)WIDTH / HEIGHT, 0.1f, 100.0f);
 
         // Use shader program and set common uniforms
         glUseProgram(shaderProgram);
@@ -192,21 +157,12 @@ int main() {
         glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
         glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
 
-        // Draw each cube with different transformations
-        glBindVertexArray(VAO);
-        for (unsigned int i = 0; i < 10; i++) {
-            glm::mat4 model = glm::mat4(1.0f);
-            model = glm::translate(model, cubePositions[i]);
-            float angle = 20.0f * i;
-            model = glm::rotate(model, (float)glfwGetTime() + glm::radians(angle), glm::vec3(0.5f, 1.0f, 0.0f));
-
-            // Set the model matrix for each cube
-            int modelLoc = glGetUniformLocation(shaderProgram, "model");
-            glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-
-            // Draw the cube
-            glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
-        }
+		// Cube
+		Mat4 model = cube.getModelMatrix();
+		int modelLoc = glGetUniformLocation(shaderProgram, "model");
+		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+		cube.rotation += Vec3(1.0f, 1.0f, 1.0f) * 50.0f * deltaTime;
+		cube.draw();
 
         // Swap buffers and poll events
         glfwSwapBuffers(window);
@@ -214,9 +170,6 @@ int main() {
     }
 
     // Clean up
-    glDeleteVertexArrays(1, &VAO);
-    glDeleteBuffers(1, &VBO);
-    glDeleteBuffers(1, &EBO);
     glDeleteProgram(shaderProgram);
     glfwTerminate();
     return 0;
