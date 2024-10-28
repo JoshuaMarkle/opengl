@@ -3,11 +3,13 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include "Player.h"
 #include "Camera.h"
 #include "Cube.h"
 #include <iostream>
 #include <cmath>
 
+using Vec2 = glm::vec2;
 using Vec3 = glm::vec3;
 using Mat4 = glm::mat4;
 
@@ -38,6 +40,7 @@ float lastFrame = 0.0f; // Time of last frame
 
 // Camera
 Camera camera(Vec3(0.0f, 0.0f, 3.0f));
+Player player(Vec3(0.0f, 0.0f, 3.0f), &camera);
 
 int main() {
     // Initialize GLFW
@@ -181,16 +184,22 @@ void processInput(GLFWwindow *window) {
 		glfwSetWindowShouldClose(window, true);
 	}
 
-	// Camera controls
-	float cameraSpeed = 10.0f * deltaTime;
+	// Player controls
+	float xDir = 0.0f, yDir = 0.0f;
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-		camera.processKeyboard(FORWARD, deltaTime);
+		yDir += 1.0f;
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-		camera.processKeyboard(BACKWARD, deltaTime);
+		yDir -= 1.0f;
 	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-		camera.processKeyboard(LEFT, deltaTime);
+		xDir -= 1.0f;
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-		camera.processKeyboard(RIGHT, deltaTime);
+		xDir += 1.0f;
+	player.move(Vec2(xDir, yDir), deltaTime);
+
+	if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
+		player.jump();
+	}
+	player.updateVertical(deltaTime);
 }
 
 // Mouse movement callback
