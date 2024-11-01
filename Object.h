@@ -4,6 +4,7 @@
 #include <GL/glew.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include "OBJImporter.h"
 #include <iostream>
 #include <vector>
 
@@ -19,6 +20,8 @@ public:
     Vec3 scale;
     std::vector<float> vertices;
     std::vector<unsigned int> indices;
+    std::vector<unsigned int> uvs;
+    std::vector<unsigned int> normals;
 
     // OpenGL attributes
     unsigned int VAO, VBO, EBO;
@@ -92,6 +95,44 @@ public:
         if (VAO != 0) glDeleteVertexArrays(1, &VAO);
         if (VBO != 0) glDeleteBuffers(1, &VBO);
         if (EBO != 0) glDeleteBuffers(1, &EBO);
+    }
+
+	// Load OBJ file
+    bool loadFromOBJ(const char* path) {
+        std::vector<glm::vec3> outVertices;
+        std::vector<glm::vec2> outUVs;
+        std::vector<glm::vec3> outNormals;
+
+        if (!OBJImporter::loadOBJ(path, outVertices, outUVs, outNormals)) {
+            std::cerr << "Failed to load OBJ file: " << path << std::endl;
+            return false;
+        }
+
+        // Convert vertices to a flat array for OpenGL
+        for (const auto& vertex : outVertices) {
+            vertices.push_back(vertex.x);
+            vertices.push_back(vertex.y);
+            vertices.push_back(vertex.z);
+        }
+
+        // Generate simple indices (for unindexed OBJ models)
+        indices.resize(outVertices.size());
+        for (size_t i = 0; i < indices.size(); ++i) {
+            indices[i] = static_cast<unsigned int>(i);
+        }
+
+        // Convert UVs and normals if needed (currently not used for rendering)
+        for (const auto& uv : outUVs) {
+            uvs.push_back(uv.x);
+            uvs.push_back(uv.y);
+        }
+        for (const auto& normal : outNormals) {
+            normals.push_back(normal.x);
+            normals.push_back(normal.y);
+            normals.push_back(normal.z);
+        }
+
+        return true;
     }
 };
 

@@ -139,6 +139,12 @@ int main() {
 		cubes.push_back(std::make_unique<Cube>(cubePositions[i], Vec3(0.0f, 0.0f, 0.0f), Vec3(1.0f, 1.0f, 1.0f)));
 	}
 
+	// Create an Object instance
+    // Object obj;
+    // if (!obj.loadFromOBJ("cow.obj")) {
+    //     std::cerr << "Failed to load OBJ file." << std::endl;
+    //     return -1;
+    // }
 
     // Experimental
     glEnable(GL_DEPTH_TEST);
@@ -170,7 +176,6 @@ int main() {
         glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
 
 		// Render cubes
-		int modelLoc = glGetUniformLocation(shaderProgram, "model");
 		for (const auto& cube : cubes) {
 			// Update rotation
 			cube->rotation += Vec3(1.0f, 1.0f, 1.0f) * 50.0f * deltaTime;
