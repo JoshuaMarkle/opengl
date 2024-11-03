@@ -1,5 +1,6 @@
 # Directories
 IMGUI_DIR = ./lib/imgui
+OBJ_DIR = obj
 
 # Compiler and flags
 CC = g++
@@ -15,8 +16,8 @@ SRC = main.cpp \
       $(IMGUI_DIR)/backends/imgui_impl_glfw.cpp \
       $(IMGUI_DIR)/backends/imgui_impl_opengl3.cpp
 
-# Object files (replace .cpp with .o)
-OBJ = $(SRC:.cpp=.o)
+# Object files in the obj directory
+OBJ = $(patsubst %.cpp, $(OBJ_DIR)/%.o, $(SRC))
 
 # Output executable
 TARGET = main
@@ -31,13 +32,15 @@ all: $(TARGET)
 $(TARGET): $(OBJ)
 	$(CC) $(CFLAGS) $(OBJ) -o $(TARGET) $(LIBS)
 
-# Rule to build object files
-%.o: %.cpp
+# Rule to build object files in the obj directory
+$(OBJ_DIR)/%.o: %.cpp
+	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # Clean target
 clean:
 	rm -f $(OBJ) $(TARGET)
+	rm -rf $(OBJ_DIR)
 
 # Phony targets (not real files)
 .PHONY: all clean
