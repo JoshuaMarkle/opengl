@@ -6,10 +6,7 @@
 #include "Player.h"
 #include "Camera.h"
 #include "Cube.h"
-#include <iostream>
-#include <cmath>
-#include <vector>
-#include <memory>
+#include <bits/stdc++.h>
 
 using namespace std;
 
